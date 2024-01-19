@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.admin.dao.AdminDAO">
+	
+	<resultMap type="hashmap" id="proListMap">
+		<id property="proNo" column="PRO_NO"/>
+		<result property="proName" column="PRO_NAME"/>
+	</resultMap>
+	
+	<select id="selectProList" resultMap="proListMap">
+		SELECT 
+			PRO_NO, PRO_NAME
+		FROM 
+			PROFESSOR 
+	</select>
+
+	<resultMap type="hashmap" id="stdListMap">
+		<id property="stdNo" column="STD_NO"/>
+		<result property="stdName" column="STD_NAME"/>
+	</resultMap>
+
+	<select id="selectStdList" resultMap="stdListMap">
+		SELECT 
+			STD_NO, STD_NAME
+		FROM 
+			STUDENT 
+	</select>
+	
+		<resultMap type="hashmap" id="proMap">
+		<id property="proNo" column="PRO_NO"/>
+		<result property="proName" column="PRO_NAME"/>
+		<collection property="lectureList" javaType="list" ofType="hashmap">
+			<result property="lecDay" column="LEC_DAY"/>
+			<result property="lecTime" column="LEC_TIME"/>
+			<result property="lecRoom" column="LEC_ROOM"/>
+			<collection property="subjectList" javaType="list" ofType="hashmap">
+				<result property="subName" column="SUB_NAME"/>
+			</collection>
+		</collection>
+	</resultMap>
+	
+	<select id="selectPro" resultMap="proMap" parameterType="String">
+		SELECT 
+			P.PRO_NO, P.PRO_NAME, S.SUB_NAME
+			,  DECODE(L.LEC_DAY,'1', '월요일', '2', '화요일','3','수요일','4','목요일','5','금요일') AS LEC_DAY
+			, L.LEC_TIME, L.LEC_ROOM
+		FROM 
+			PROFESSOR P
+		INNER JOIN LECTURE L  ON P.PRO_NO = L.PRO_NO
+		INNER JOIN SUBJECT S ON L.SUB_CD = S.SUB_CD
+		WHERE 
+			P.PRO_NO = #{proNo}
+	</select>
+	
+	<resultMap type="hashmap" id="stdMap">
+		<id property="stdNo" column="STD_NO"/>
+		<result property="stdName" column="STD_NAME"/>
+		<collection property="subjectList" javaType="list" ofType="hashmap">
+			<result property="subCd" column="SUB_CD"/>
+			<result property="subName" column="SUB_NAME"/>
+			<collection property="classList" javaType="list" ofType="hashmap">
+				<result property="clsScore" column="CLS_SCORE"/>
+			</collection>
+		</collection>
+	</resultMap>
+
+	<select id="selectStd" resultMap="stdMap" parameterType="String">
+		SELECT 
+			S.STD_NO, S.STD_NAME, B.SUB_CD, B.SUB_NAME, C.CLS_SCORE
+		FROM 
+			STUDENT S
+		INNER JOIN CLASS C ON S.STD_NO = C.STD_NO
+		INNER JOIN SUBJECT B ON C.SUB_CD = B.SUB_CD
+		WHERE 
+			S.STD_NO = #{stdNo}
+	</select>
+</mapper>
+

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.student.dao.StudentDAO">
+
+<!-- 	<resultMap type="hashmap" id="classMap"> -->
+<!-- 		<id property="stdNo" column="STD_NO"/> -->
+<!-- 		<id property="subCd" column="SUB_CD"/> -->
+<!-- 		<result property="clsScore" column="CLS_SCORE"/> -->
+<!-- 		<result property="subName" column="SUB_NAME"/> -->
+<!-- 	</resultMap> -->
+<!--     <select id="selectScoreList" resultMap="classMap" parameterType="string"> -->
+<!--         SELECT A.STD_NO, A.SUB_CD, A.CLS_SCORE, A.SUB_NAME -->
+<!-- 		FROM( -->
+<!-- 		    SELECT CLASS.*, SUBJECT.SUB_NAME -->
+<!-- 		    FROM CLASS -->
+<!-- 		    INNER JOIN SUBJECT ON CLASS.SUB_CD = SUBJECT.SUB_CD -->
+<!-- 		) A  -->
+<!-- 		WHERE INSTR(A.STD_NO, #{stdNo}) > 0 -->
+<!--     </select> -->
+    <select id="selectClassList">
+        SELECT SUB_CD, SUB_NAME, SUB_CREDIT
+        FROM SUBJECT
+    </select>
+    
+    <resultMap type="hashmap" id="lectureMap">
+    	<id property="proNo" column="PRO_NO"/>
+    	<id property="subCd" column="SUB_CD"/>
+    	<result property="subName" column="SUB_NAME"/>
+    	<result property="lecDay" column="LEC_DAY"/>
+    	<result property="lecTime" column="LEC_TIME"/>
+    	<result property="lecRoom" column="LEC_ROOM"/>
+    	<result property="proName" column="PRO_NAME"/>
+    	<result property="subCredit" column="SUB_CREDIT"/>
+    </resultMap>
+    <select id="selectLectureList" resultMap="lectureMap">
+    	WITH LECTURETABLE AS (
+		    SELECT
+		        P.PRO_NAME,
+		        L.PRO_NO,
+		        L.SUB_CD,
+		        CASE
+		            WHEN LEC_DAY = '1' THEN '월'
+		            WHEN LEC_DAY = '2' THEN '화'
+		            WHEN LEC_DAY = '3' THEN '수'
+		            WHEN LEC_DAY = '4' THEN '목'
+		            WHEN LEC_DAY = '5' THEN '금'
+		            ELSE '-'
+		        END AS LEC_DAY,
+		        L.LEC_TIME,
+		        L.LEC_ROOM
+		    FROM LECTURE L
+		    INNER JOIN PROFESSOR P ON L.PRO_NO = P.PRO_NO
+		)
+		SELECT L.PRO_NAME, S.SUB_NAME ,L.SUB_CD, L.LEC_DAY, L.LEC_TIME, L.LEC_ROOM, S.SUB_CREDIT
+		FROM LECTURETABLE L LEFT OUTER JOIN SUBJECT S ON (L.SUB_CD = S.SUB_CD)
+    </select>
+    <select id="selectClassSubCodeList" parameterType="string">
+    	SELECT CLASS.SUB_CD "subCd"
+    		, CASE
+		            WHEN LECTURE.LEC_DAY = '1' THEN '월'
+		            WHEN LECTURE.LEC_DAY = '2' THEN '화'
+		            WHEN LECTURE.LEC_DAY = '3' THEN '수'
+		            WHEN LECTURE.LEC_DAY = '4' THEN '목'
+		            WHEN LECTURE.LEC_DAY = '5' THEN '금'
+		            ELSE '-'
+		        END AS "lecDay"
+    		, LECTURE.LEC_TIME "lecTime"
+    	FROM CLASS, LECTURE
+    	WHERE CLASS.SUB_CD = LECTURE.SUB_CD AND CLASS.STD_NO =  #{stdNo, jdbcType=VARCHAR}
+    </select>
+    
+    <resultMap type="hashmap" id="scoreMap">
+    	<result property="stdNo" column="STD_NO"/>
+    	<result property="subCd" column="SUB_CD"/>
+    	<result property="clsScore" column="CLS_SCORE"/>
+    	<result property="subName" column="SUB_NAME"/>
+    	<result property="grade" column="GRADE"/>
+    </resultMap>
+    <select id="selectScoreList" resultMap="scoreMap">
+		WITH SCORETABLE AS (
+		    SELECT
+		        STD_NO,
+		        SUB_CD,
+		        CLS_SCORE,
+		        CASE
+		            WHEN CLS_SCORE BETWEEN 101 AND 999 THEN ''
+		            WHEN CLS_SCORE BETWEEN 96 AND 100 THEN 'A+'
+		            WHEN CLS_SCORE BETWEEN 90 AND 95 THEN 'A0'
+		            WHEN CLS_SCORE BETWEEN 85 AND 89 THEN 'B+'
+		            WHEN CLS_SCORE BETWEEN 80 AND 84 THEN 'B0'
+		            WHEN CLS_SCORE BETWEEN 75 AND 79 THEN 'C+'
+		            WHEN CLS_SCORE BETWEEN 70 AND 74 THEN 'C0'
+		            WHEN CLS_SCORE BETWEEN 65 AND 69 THEN 'D+'
+		            WHEN CLS_SCORE BETWEEN 60 AND 64 THEN 'D0'
+		            ELSE 'F'
+		        END AS GRADE
+		    FROM CLASS
+		)
+		
+		SELECT SCORETABLE.STD_NO
+		    , SCORETABLE.SUB_CD
+		    , SUBJECT.SUB_NAME
+		    , NULLIF(SCORETABLE.CLS_SCORE, 999) CLS_SCORE
+		    , SCORETABLE.GRADE
+			FROM SCORETABLE INNER JOIN SUBJECT ON SCORETABLE.SUB_CD = SUBJECT.SUB_CD 
+		    WHERE SCORETABLE.STD_NO = #{stdNo}
+    </select>
+    
+    <insert id="insertClass"  >
+    	INSERT 
+    	INTO CLASS (
+			STD_NO, SUB_CD, CLS_SCORE
+		)
+		VALUES (#{newClass.stdNo, jdbcType=VARCHAR}, #{newClass.subCd, jdbcType=VARCHAR}, 999)
+    </insert>
+</mapper>	
